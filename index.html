@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Links Hub</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="logo">📚 Training Hub</div>
+            <nav class="nav-buttons">
+                <button class="btn btn-outline" onclick="window.location.href='admin.html'">Admin Panel</button>
+                <button class="btn btn-primary" onclick="location.reload()">Refresh</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <section class="hero">
+            <h1>Learning Resources Hub</h1>
+            <p>Curated training materials and reference links for continuous learning</p>
+        </section>
+
+        <section class="filter-section">
+            <div class="filter-group">
+                <input type="text" class="search-box" id="searchInput" placeholder="Search titles or descriptions...">
+                <div class="tag-filter" id="tagFilter"></div>
+            </div>
+        </section>
+
+        <section class="posts-grid" id="postsGrid"></section>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <h3>No materials found</h3>
+            <p>Try adjusting your filters or check back later</p>
+        </div>
+    </div>
+
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPosts();
+            initializeFilters();
+        });
+        document.getElementById('searchInput').addEventListener('input', filterPosts);
+    </script>
+</body>
+</html>
