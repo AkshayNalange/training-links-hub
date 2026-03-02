@@ -153,7 +153,7 @@
                     <p><strong>Link:</strong> <a href="${post.link}" target="_blank">${post.link}</a></p>
                     <p><strong>Category:</strong> ${post.category}</p>
                     <p><strong>Tags:</strong> ${post.tags.join(', ')}</p>
-                    <button class="btn btn-danger" onclick="deletePost('${post._id}')">Delete</button>
+                    <button class="btn btn-danger" onclick="deletePost('${post.id}')">Delete</button>
                 </div>
             `).join('');
         }
