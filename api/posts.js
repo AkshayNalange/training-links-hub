@@ -1,80 +1,66 @@
-// For demo: stores data in memory (resets on redeploy)
-// For production: use MongoDB or Supabase
+// api/posts.js — Vercel Postgres version
+import { sql } from '@vercel/postgres';
 
-let posts = [
-    {
-        _id: '1',
-        title: 'React Complete Guide',
-        description: 'Learn React from basics to advanced concepts',
-        link: 'https://react.dev',
-        category: 'Web Development',
-        tags: ['React', 'JavaScript', 'Tutorial']
-    },
-    {
-        _id: '2',
-        title: 'Python Data Science',
-        description: 'Master data science with Python',
-        link: 'https://www.python.org',
-        category: 'Data Science',
-        tags: ['Python', 'Data Science', 'ML']
-    }
-];
-
-export default function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
 
-    // GET all posts
-    if (req.method === 'GET') {
-        return res.status(200).json(posts);
-    }
+    try {
+        // Create table if it doesn't exist
+        await sql`
+            CREATE TABLE IF NOT EXISTS posts (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                link TEXT NOT NULL,
+                category TEXT NOT NULL,
+                tags TEXT[],
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `;
 
-    // POST new post
-    if (req.method === 'POST') {
-        const { title, description, link, category, tags } = req.body;
-        
-        if (!title || !description || !link || !category || !tags) {
-            return res.status(400).json({ error: 'Missing required fields' });
+        // GET all posts
+        if (req.method === 'GET') {
+            const { rows } = await sql`
+                SELECT * FROM posts ORDER BY created_at DESC
+            `;
+            return res.status(200).json(rows);
         }
 
-        const newPost = {
-            _id: Date.now().toString(),
-            title,
-            description,
-            link,
-            category,
-            tags: Array.isArray(tags) ? tags : [tags],
-            createdAt: new Date().toISOString()
-        };
+        // POST new post
+        if (req.method === 'POST') {
+            const { title, description, link, category, tags } = req.body;
 
-        posts.unshift(newPost);
-        return res.status(201).json(newPost);
+            if (!title || !description || !link || !category || !tags) {
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+
+            const tagsArray = Array.isArray(tags) 
+                ? tags 
+                : tags.split(',').map(t => t.trim());
+
+            const { rows } = await sql`
+                INSERT INTO posts (title, description, link, category, tags)
+                VALUES (${title}, ${description}, ${link}, ${category}, ${tagsArray})
+                RETURNING *
+            `;
+            return res.status(201).json(rows[0]);
+        }
+
+        // DELETE post
+        if (req.method === 'DELETE') {
+            const id = req.url.split('/').pop();
+            await sql`DELETE FROM posts WHERE id = ${id}`;
+            return res.status(200).json({ message: 'Deleted' });
+        }
+
+        return res.status(405).json({ error: 'Method not allowed' });
+
+    } catch (error) {
+        console.error('DB Error:', error);
+        return res.status(500).json({ error: 'Database error', detail: error.message });
     }
-
-    // DELETE post
-    if (req.method === 'DELETE') {
-        const { id } = req.query;
-        posts = posts.filter(p => p._id !== id);
-        return res.status(200).json({ message: 'Deleted' });
-    }
-
-    return res.status(405).json({ error: 'Method not allowed' });
 }
-```
-
----
-
-#### **FILE 7: `.gitignore`**
-```
-node_modules/
-.env
-.env.local
-.vercel/
-.DS_Store
